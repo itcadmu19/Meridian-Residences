@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import authService from "../services/authService.js";
 
 const STORAGE_KEY = "auth_token";
@@ -19,6 +19,15 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(loadStoredUser);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    function handleUnauthorized() {
+      setCurrentUser(null);
+    }
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
 
   async function login(email, password) {
     setIsSubmitting(true);

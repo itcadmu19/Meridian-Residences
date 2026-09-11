@@ -24,7 +24,7 @@ services:
     container_name: meridian-backend
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-meridian}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-meridian_residences}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-do-not-commit}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}

@@ -22,6 +22,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+
     const envelope = error.response?.data;
     const normalized = {
       success: false,
