@@ -1,0 +1,186 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { Plus } from "lucide-react";
+import PageHeader from "../components/PageHeader.jsx";
+import Button from "../components/Button.jsx";
+import SecondaryButton from "../components/SecondaryButton.jsx";
+import Modal from "../components/Modal.jsx";
+import Select from "../components/Select.jsx";
+import Textarea from "../components/Textarea.jsx";
+import Loading from "../components/Loading.jsx";
+import ErrorMessage from "../components/ErrorMessage.jsx";
+import EmptyState from "../components/EmptyState.jsx";
+import MaintenanceCard from "../components/MaintenanceCard.jsx";
+import maintenanceService from "../services/maintenanceService.js";
+
+const ISSUE_TYPE_OPTIONS = [
+  { value: "plumbing", label: "Plumbing" },
+  { value: "electrical", label: "Electrical" },
+  { value: "hvac", label: "HVAC" },
+  { value: "appliance", label: "Appliance" },
+  { value: "general", label: "General" },
+  { value: "other", label: "Other" },
+];
+
+const FILTER_TABS = [
+  { key: "all", label: "All" },
+  { key: "open", label: "Open" },
+  { key: "in_progress", label: "In Progress" },
+  { key: "resolved", label: "Resolved" },
+];
+
+const EMPTY_FORM = { issue_type: "plumbing", description: "" };
+
+export default function Maintenance() {
+  const [maintenanceTickets, setMaintenanceTickets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [formError, setFormError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  async function loadTickets() {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await maintenanceService.getTickets();
+      setMaintenanceTickets(response.data || []);
+    } catch (err) {
+      setError(err.message || "Unable to load maintenance requests.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredTickets = useMemo(() => {
+    if (activeFilter === "all") return maintenanceTickets;
+    return maintenanceTickets.filter((ticket) => ticket.status === activeFilter);
+  }, [maintenanceTickets, activeFilter]);
+
+  function openModal() {
+    setForm(EMPTY_FORM);
+    setFormError(null);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    if (isSubmitting) return;
+    setIsModalOpen(false);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!form.description.trim()) {
+      setFormError("Please describe the issue.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    try {
+      const created = await maintenanceService.createTicket({
+        issue_type: form.issue_type,
+        description: form.description.trim(),
+      });
+
+      const ticket = created.data;
+      setMaintenanceTickets((prev) => [ticket, ...prev]);
+      setIsModalOpen(false);
+
+      // Kick off AI triage; update the ticket in place once classified.
+      try {
+        const triaged = await maintenanceService.triageTicket(ticket.id);
+        setMaintenanceTickets((prev) =>
+          prev.map((item) => (item.id === ticket.id ? { ...item, ...triaged.data } : item))
+        );
+      } catch {
+        // Triage failure should not block ticket creation; resident can still track it.
+      }
+    } catch (err) {
+      setFormError(err.message || "Unable to submit the request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="page">
+      <PageHeader
+        title="Maintenance"
+        description="Report an issue or track your existing requests."
+        action={
+          <Button onClick={openModal}>
+            <Plus size={16} />
+            Submit Request
+          </Button>
+        }
+      />
+
+      <div className="filter-tabs">
+        {FILTER_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            className={`filter-tab${activeFilter === tab.key ? " active" : ""}`}
+            onClick={() => setActiveFilter(tab.key)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {isLoading && <Loading label="Loading maintenance requests..." />}
+      {!isLoading && error && <ErrorMessage message={error} onRetry={loadTickets} />}
+      {!isLoading && !error && filteredTickets.length === 0 && (
+        <EmptyState message="No maintenance requests in this view yet." />
+      )}
+
+      {!isLoading && !error && filteredTickets.length > 0 && (
+        <div className="ticket-list">
+          {filteredTickets.map((ticket) => (
+            <MaintenanceCard key={ticket.id} ticket={ticket} />
+          ))}
+        </div>
+      )}
+
+      {isModalOpen && (
+        <Modal title="Submit Maintenance Request" onClose={closeModal}>
+          <form onSubmit={handleSubmit}>
+            <Select
+              id="issue_type"
+              label="Issue type"
+              options={ISSUE_TYPE_OPTIONS}
+              value={form.issue_type}
+              onChange={(event) => setForm((prev) => ({ ...prev, issue_type: event.target.value }))}
+            />
+            <Textarea
+              id="description"
+              label="Description"
+              placeholder="Describe the issue, e.g. Kitchen sink is leaking"
+              value={form.description}
+              onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+              error={formError}
+            />
+            <div className="modal__actions">
+              <SecondaryButton type="button" onClick={closeModal} disabled={isSubmitting}>
+                Cancel
+              </SecondaryButton>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Submitting..." : "Submit Request"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}

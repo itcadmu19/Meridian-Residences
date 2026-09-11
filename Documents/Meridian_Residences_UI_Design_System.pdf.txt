@@ -1,0 +1,775 @@
+=== FILE: Meridian_Residences_UI_Design_System.pdf pages: 18
+--- page 0 ---
+Meridian Residences — Official UI Development Guide
+Page 1
+MERIDIAN
+RESIDENC
+ES
+UI DESIGN SYSTEM
++ GPT DEVELOPMENT GUIDE
+A single source of truth for the Team 5 resident portal UI. Use this document during
+implementation, code reviews, Figma work, and future conversations with
+GPT-based coding assistants.
+Product: Meridian Residences Resident Portal   |   Style: Modern Luxury Serviced Apartment + Clean SaaS Dashboard
+
+--- page 1 ---
+Meridian Residences — Official UI Development Guide
+Page 2
+1. Design System Purpose
+This guide locks the visual language for the entire Meridian Residences application. The portal should feel like one
+premium residential management platform, not four independently designed pages.
+Overall vibe: modern luxury serviced apartment + clean SaaS dashboard.
+The interface should communicate premium residential living, trust, clarity, calmness and operational usefulness. It
+should be professional and polished without becoming a flashy hotel site, cyber/AI dashboard, overly colorful SaaS
+product, or a page full of gradients.
+Non-negotiable design principles
+ One application: every page shares the same shell, typography, colors, spacing and component language.
+ Calm premium feel: forest green, olive, warm gold, warm cream and white; gold is only an accent.
+ Functional first: resident tasks such as leases, invoices and maintenance must be immediately understandable.
+ Consistency over creativity: individual contributors may add content and workflow-specific controls, but should
+not invent new visual systems.
+ AI belongs to the product: the assistant may be visually distinctive within the same system, but must not become
+a separate ChatGPT clone.
+Reference image
+The generated mockup is a visual reference only. The exact implementation should follow the tokens and rules in this document.
+
+--- page 2 ---
+Meridian Residences — Official UI Development Guide
+Page 3
+2. Master Color Palette
+These colors are the official product tokens. Do not introduce page-specific primary colors.
+Purpose
+Name
+HEX
+Usage
+Primary
+Forest Green
+#26382A
+Main actions, navigation emphasis, headings, brand identity
+Primary Hover
+Deep Forest
+#1D2C20
+Hover/active states for primary controls
+Secondary
+Olive
+#6C7750
+Secondary emphasis, AI interface, supportive actions
+Accent
+Champagne Gold
+#B89B5E
+Logo detail, premium accent, tiny highlights, AI sparkle
+Background
+Warm Cream
+#F6F0E4
+Application/page background
+Surface
+White
+#FFFFFF
+Cards, navbar, sidebar, forms
+Main Text
+Charcoal
+#202720
+Primary readable content
+Secondary Text
+Warm Slate
+#6D716A
+Descriptions, metadata, helper text
+Border
+Warm Gray
+#DED8CB
+Card, input, table and divider borders
+Success
+Green
+#2E7D5B
+Paid, active, resolved
+Warning
+Amber
+#C58A1C
+Pending, high priority
+Error
+Red
+#C94C4C
+Overdue, urgent, destructive/error states
+Info
+Blue
+#3978A8
+Informational and medium-priority states
+Official core five
+FOREST
+#26382A
+OLIVE
+#6C7750
+GOLD
+#B89B5E
+CREAM
+#F6F0E4
+WHITE
+#FFFFFF
+Gold rule: use #B89B5E as a luxury accent, not as the main page color, large background, body text or
+every heading.
+
+--- page 3 ---
+Meridian Residences — Official UI Development Guide
+Page 4
+3. Global Application Shell
+All authenticated pages use one common shell. Create it once and reuse it.
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+■ MERIDIAN RESIDENCES ■ Resident ■ ■
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+■ Dashboard ■ ■
+■ My Lease ■ PAGE CONTENT ■
+■ Invoices ■ ■
+■ Maintenance ■ ■
+■ AI Assistant ■ ■
+■ Profile ■ ■
+■ ■ ■
+■ ■■■■■■■■■■■ ■ ■
+■ Help ■ ■
+■ ■ ■
+■ Log Out ■ ■
+■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+Sidebar
+ Width: 240px.
+ Background: #FFFFFF.
+ Right border: #DED8CB.
+ Logo text: MERIDIAN / RESIDENCES.
+ Navigation: Dashboard, My Lease, Invoices, Maintenance, AI Assistant, Profile; Help and Log Out separated near
+the bottom.
+Top navbar
+ Height: 64px.
+ Background: white; bottom border: #DED8CB.
+ Keep one shared Navbar.jsx; do not create member-specific navbars.
+Page structure
+PAGE TITLE
+Page description
+[ summary card ] [ summary card ] [ summary card ]
+SECTION TITLE
+[ main content card / table / workflow ]
+Recommended page padding is 32px on desktop. Keep content in a comfortable readable width instead of
+stretching every card edge-to-edge.
+
+--- page 4 ---
+Meridian Residences — Official UI Development Guide
+Page 5
+4. Typography System
+Use Inter throughout the product. If a hosted font is not available, use the system fallback stack.
+font-family:
+Inter,
+-apple-system,
+BlinkMacSystemFont,
+"Segoe UI",
+sans-serif;
+Role
+Size
+Weight
+Purpose
+Page title
+28px
+600
+Primary page heading
+Section title
+20px
+600
+Major section headings
+Card title
+16px
+600
+Card/row headings
+Body
+14px
+400
+Normal readable content
+Secondary
+13px
+400
+Descriptions and metadata
+Status / small
+12px
+400/600
+Badges, labels, compact states
+Important value
+14–20px
+600
+Money, dates, key metrics
+Typography rules
+ Use hierarchy, not color overload, to make information scannable.
+ Avoid all-caps for normal content; reserve uppercase for compact labels or status badges.
+ Keep line lengths readable, especially on the AI assistant and policy responses.
+ Do not introduce a second font for a page or feature.
+
+--- page 5 ---
+Meridian Residences — Official UI Development Guide
+Page 6
+5. Spacing, Cards and Controls
+The spacing system uses multiples of 4px.
+4px 8px 12px 16px 20px 24px 32px 40px 48px
+Token / rule
+Value
+Page padding
+32px
+Card padding
+20px
+Card gap
+16px
+Section gap
+32px
+Button padding
+12px 18px
+Small radius
+6px
+Medium radius
+8px
+Large/card radius
+12px
+Card shadow
+0 2px 8px rgba(0,0,0,0.04)
+Card standard
+background: #FFFFFF;
+border: 1px solid #DED8CB;
+border-radius: 12px;
+padding: 20px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+Button standard
+ Type
+Background
+Text
+Border / behavior
+Primary
+#26382A
+#FFFFFF
+Hover to #1D2C20; 8px radius; 40px height
+Secondary
+#FFFFFF
+#26382A
+1px #DED8CB border
+Destructive
+#C94C4C
+#FFFFFF
+Use only for destructive actions
+Animation
+ Use subtle transitions only. Avoid glowing borders, excessive motion, glassmorphism, rainbow gradients or large
+animated effects.
+
+--- page 6 ---
+Meridian Residences — Official UI Development Guide
+Page 7
+6. Icons and Responsive Rules
+Use one icon library: Lucide React. Do not mix icon libraries.
+Recommended icons
+Home
+FileText
+CreditCard
+Wrench
+MessageCircle
+User
+Bell
+ChevronDown
+Plus
+Check
+AlertTriangle
+Responsive breakpoints
+ Device
+Breakpoint
+Layout behavior
+Desktop
+≥ 1200px
+240px sidebar + 64px navbar + content area
+Tablet
+768–1199px
+Compact sidebar or responsive navigation; preserve hierarchy
+Mobile
+< 768px
+Top navbar + content + mobile/bottom navigation; stack cards
+Responsive rules
+ Three-card dashboard rows stack gracefully on smaller screens.
+ Tables should become horizontally scrollable or convert to stacked invoice rows.
+ Forms should use full available width on mobile.
+ Never hide critical status, due date, priority or action information merely to fit a smaller screen.
+
+--- page 7 ---
+Meridian Residences — Official UI Development Guide
+Page 8
+7. Page-by-Page UI Specification
+These are the four story-specific pages plus the central dashboard. All remain inside the same application shell.
+Dashboard
+Good morning, Anu
+Welcome back to Meridian Residences
+[ CURRENT UNIT ] [ NEXT PAYMENT ] [ OPEN REQUESTS ]
+Recent Activity Quick Actions
+ Invoice overdue View My Lease
+ Maintenance request updated Pay Invoice
+ Payment received Submit Maintenance Request
+ New lease agreement Ask AI Assistant
+ Use white cards with subtle borders/shadows.
+ Current unit example: Apartment 101 / 2 BHK.
+ Next payment example: ■45,000 / due 10 Sep 2026.
+ Open requests should show a count and a concise status.
+My Lease — Member 1
+My Lease
+View your current residence agreement and lease details.
+CURRENT LEASE ACTIVE
+Apartment 101
+Meridian Residences
+Lease Period: 01 Jan 2026 — 31 Dec 2026
+Monthly Rent: ■45,000
+Renewal Date: 01 Dec 2026
+[ Download Agreement ] [ Request Renewal ]
+Invoice — Member 2
+Invoices
+View your recurring billing and payment status.
+Total Outstanding ■45,000
+Next Due 10 Sep 2026
+Last Payment ■45,000
+Invoice Billing Period Amount Due Date Status
+INV-003 Aug 2026 ■45,000 10 Sep OVERDUE
+INV-002 Jul 2026 ■45,000 10 Aug PAID
+INV-001 Jun 2026 ■45,000 10 Jul PAID
+
+--- page 8 ---
+Meridian Residences — Official UI Development Guide
+Page 9
+8. Maintenance and AI Assistant UI
+Maintenance — Member 3
+Maintenance
+Report an issue or track your existing requests.
++ Submit Request
+[ All ] [ Open ] [ In Progress ] [ Resolved ]
+MT-005 Water leakage
+Kitchen sink is leaking
+Priority: HIGH Status: IN PROGRESS
+Submitted: 08 Sep 2026
+Maintenance priority mapping
+ Priority
+Color
+HEX
+LOW
+Gray / neutral
+#6D716A
+MEDIUM
+Blue
+#3978A8
+HIGH
+Amber
+#C58A1C
+URGENT
+Red
+#C94C4C
+AI Assistant — Member 4
+The assistant is the one page allowed to feel slightly different, but it must still use the same shell, typography,
+spacing and card system.
+Lease & Policy Assistant
+Ask questions about your lease and building policies.
+You: Is parking included?
+Assistant:
+According to your building policy, parking is included...
+Sources
+■ Building Parking Policy
+■ Resident Handbook
+[ Ask about your lease or building... ➤ ]
+ Primary AI accent: olive #6C7750.
+ Warm gold may be used lightly for the AI sparkle/icon.
+ Do not introduce purple/neon/cyber styling.
+ Show grounded source references with the response.
+
+--- page 9 ---
+Meridian Residences — Official UI Development Guide
+Page 10
+9. Status, Badge and Data-Display Rules
+Status colors are semantic and fixed. Members must not invent their own status colors.
+Domain
+State
+Color
+Lease
+ACTIVE
+Success #2E7D5B
+Lease
+PENDING
+Warning #C58A1C
+Lease
+EXPIRED
+Error #C94C4C
+Invoice
+PAID
+Success #2E7D5B
+Invoice
+PENDING
+Warning #C58A1C
+Invoice
+OVERDUE
+Error #C94C4C
+Invoice
+CANCELLED
+Neutral gray
+Maintenance
+LOW
+Neutral gray
+Maintenance
+MEDIUM
+Info #3978A8
+Maintenance
+HIGH
+Warning #C58A1C
+Maintenance
+URGENT
+Error #C94C4C
+Badge behavior
+ Use compact rounded badges with clear text.
+ Do not rely on color alone; always show the status word.
+ Keep badges visually secondary to the primary content.
+
+--- page 10 ---
+Meridian Residences — Official UI Development Guide
+Page 11
+10. Shared Component Library
+Create these components once before the four members build story pages.
+frontend/src/components/
+■■■ Navbar.jsx
+■■■ Sidebar.jsx
+■■■ PageHeader.jsx
+■■■ Card.jsx
+■■■ StatCard.jsx
+■■■ Button.jsx
+■■■ SecondaryButton.jsx
+■■■ StatusBadge.jsx
+■■■ PriorityBadge.jsx
+■■■ Loading.jsx
+■■■ ErrorMessage.jsx
+■■■ EmptyState.jsx
+■■■ Modal.jsx
+■■■ Input.jsx
+■■■ Select.jsx
+■■■ Textarea.jsx
+■■■ LeaseCard.jsx
+■■■ InvoiceCard.jsx
+■■■ MaintenanceCard.jsx
+■■■ ChatMessage.jsx
+Component responsibility
+ Component
+Responsibility
+Navbar
+Global top navigation, notification and resident profile area
+Sidebar
+Global application navigation
+PageHeader
+Consistent title + description + optional action
+Card
+Standard surface container
+StatCard
+Compact dashboard metric
+Button
+Primary action
+SecondaryButton
+Secondary action
+StatusBadge
+Shared semantic status display
+PriorityBadge
+Maintenance priority display
+Loading / ErrorMessage / EmptyState
+Consistent async states
+Modal / Input / Select / Textarea
+Shared form primitives
+LeaseCard / InvoiceCard /
+MaintenanceCard
+Domain presentation components
+ChatMessage
+Consistent assistant conversation bubble
+Important: do not create InvoiceStatusBadge.jsx, TicketStatusTag.jsx, etc. when the shared StatusBadge
+can cover the use case.
+
+--- page 11 ---
+Meridian Residences — Official UI Development Guide
+Page 12
+11. Official theme.js
+Place the official tokens in one shared file and import/use them consistently.
+export const theme = {
+colors: {
+primary: "#26382A",
+primaryHover: "#1D2C20",
+secondary: "#6C7750",
+accent: "#B89B5E",
+background: "#F6F0E4",
+surface: "#FFFFFF",
+text: "#202720",
+textSecondary: "#6D716A",
+border: "#DED8CB",
+success: "#2E7D5B",
+warning: "#C58A1C",
+error: "#C94C4C",
+info: "#3978A8"
+},
+radius: {
+sm: "6px",
+md: "8px",
+lg: "12px"
+},
+spacing: {
+xs: "4px",
+sm: "8px",
+md: "16px",
+lg: "24px",
+xl: "32px",
+xxl: "48px"
+}
+};
+Suggested global CSS foundation
+:root {
+font-family: Inter, -apple-system, BlinkMacSystemFont,
+"Segoe UI", sans-serif;
+color: #202720;
+background: #F6F0E4;
+}
+* {
+box-sizing: border-box;
+}
+body {
+margin: 0;
+background: #F6F0E4;
+color: #202720;
+}
+button,
+input,
+select,
+textarea {
+font: inherit;
+}
+button {
+cursor: pointer;
+}
+
+--- page 12 ---
+Meridian Residences — Official UI Development Guide
+Page 13
+12. Four-Member Development Workflow
+The design system is a shared dependency. Freeze it before parallel story development.
+First: designated shared-UI owner
+Create first:
+App.jsx
+Navbar.jsx
+Sidebar.jsx
+PageHeader.jsx
+Button.jsx
+Card.jsx
+StatusBadge.jsx
+Loading.jsx
+ErrorMessage.jsx
+EmptyState.jsx
+theme.js
+global.css
+api.js
+Then freeze these files while story development is underway.
+Member ownership
+ Member
+Primary UI
+Must reuse
+Member 1
+Lease.jsx, LeaseCard.jsx
+Navbar, Sidebar, PageHeader, Card, StatusBadge,
+Button
+Member 2
+Invoices.jsx, InvoiceCard.jsx
+Same shared shell/components
+Member 3
+Maintenance.jsx, MaintenanceCard.jsx
+Same shell + PriorityBadge/StatusBadge
+Member 4
+Assistant.jsx, ChatMessage.jsx
+Same shell + typography/spacing/cards
+Do not allow this failure mode
+ Member 1: forest green    Member 2: purple    Member 3: green    Member 4: black cyberpunk
+If a new visual pattern is genuinely needed, add it to the shared system first, then reuse it. This keeps the
+application coherent.
+
+--- page 13 ---
+Meridian Residences — Official UI Development Guide
+Page 14
+13. Using GPT / Coding Assistants for UI
+Development
+Use this section as the reusable instruction layer whenever asking GPT, GitHub Copilot, Cursor, Claude Code or
+another coding assistant to build or modify Meridian UI.
+Master UI instruction
+You are developing the Meridian Residences Resident Portal.
+Follow the official Meridian Residences UI design system exactly:
+- Style: Modern Luxury Serviced Apartment + Clean SaaS Dashboard
+- Primary: #26382A
+- Primary hover: #1D2C20
+- Secondary: #6C7750
+- Accent: #B89B5E
+- Background: #F6F0E4
+- Surface: #FFFFFF
+- Text: #202720
+- Secondary text: #6D716A
+- Border: #DED8CB
+- Success: #2E7D5B
+- Warning: #C58A1C
+- Error: #C94C4C
+- Info: #3978A8
+- Font: Inter
+- Card radius: 12px
+- Card padding: 20px
+- Page padding: 32px
+- Section gap: 32px
+- Use Lucide React only for icons.
+Do not introduce a new color palette, gradients, glassmorphism, neon/cyber styling,
+random icon libraries, oversized shadows, or page-specific navigation.
+Reuse existing shared components before creating new ones.
+If a new shared component is truly necessary, make it reusable and consistent with
+the existing design system.
+Keep the UI responsive for desktop (>=1200px), tablet (768–1199px), and mobile (<768px).
+Do not modify unrelated pages or shared files unless explicitly required.
+Before coding, inspect the existing component structure and preserve existing patterns.
+Prompt for a new page
+Build the [PAGE NAME] page for Meridian Residences.
+Goal:
+[DESCRIBE USER TASK]
+Use the existing Navbar, Sidebar, PageHeader, Card, Button, StatusBadge,
+Loading, ErrorMessage and EmptyState components wherever applicable.
+Follow the official Meridian design tokens from theme.js.
+Use Inter typography and Lucide React icons.
+Keep the page visually consistent with Dashboard, My Lease, Invoices,
+Maintenance and AI Assistant.
+Requirements:
+1. [REQUIREMENT]
+2. [REQUIREMENT]
+3. [REQUIREMENT]
+Do not redesign the application shell.
+Do not introduce new colors or a new visual style.
+Return the files that need to change and explain any shared component changes before making them.
+
+--- page 14 ---
+Meridian Residences — Official UI Development Guide
+Page 15
+Prompt for fixing a UI without redesigning it
+Fix the following UI issue in the Meridian Residences Resident Portal:
+[ISSUE]
+Preserve the official UI system:
+#26382A forest green, #6C7750 olive, #B89B5E gold, #F6F0E4 warm cream,
+#FFFFFF surfaces, Inter font, 12px card radius, 20px card padding,
+32px page padding, Lucide icons.
+Do not redesign the page.
+Make the smallest clean change that fixes the issue.
+Do not modify unrelated components or introduce new dependencies unless necessary.
+Ensure desktop, tablet and mobile behavior remains correct.
+
+--- page 15 ---
+Meridian Residences — Official UI Development Guide
+Page 16
+14. Ready-to-Use GPT Prompts by Member
+Member 1 — Lease UI
+Implement Member 1's Meridian Residences lease workflow UI.
+Create/update:
+- Lease.jsx
+- LeaseCard.jsx
+- leaseService.js if the UI needs API integration
+The page must show current lease information such as unit, property,
+lease period, monthly rent, renewal date and lease status.
+Use the shared application shell and shared components.
+Use StatusBadge for lease state.
+Support loading, empty and error states.
+Use the official Meridian colors, spacing, typography and responsive rules.
+Do not create a separate page-specific visual system.
+Member 2 — Invoices UI
+Implement Member 2's Meridian Residences invoice workflow UI.
+Create/update:
+- Invoices.jsx
+- InvoiceCard.jsx
+- invoiceService.js if required
+Show summary information such as total outstanding, next due date and last payment.
+Show recurring invoices with billing period, amount, due date and payment status.
+Use fixed semantic colors: PAID=green, PENDING=amber, OVERDUE=red, CANCELLED=neutral.
+Keep financial information highly readable and consistent with the Meridian design system.
+Member 3 — Maintenance UI
+Implement Member 3's Meridian Residences maintenance workflow UI.
+Create/update:
+- Maintenance.jsx
+- MaintenanceCard.jsx
+- maintenanceService.js if required
+Allow residents to submit an issue and view/track existing requests.
+Display issue type, description, priority, status and submitted date.
+Priority mapping: LOW=neutral, MEDIUM=blue, HIGH=amber, URGENT=red.
+Use shared StatusBadge/PriorityBadge and shared form components.
+Keep the workflow action-oriented but visually consistent with the rest of the portal.
+Member 4 — AI Assistant UI
+Implement Member 4's Meridian Residences Lease & Policy Assistant UI.
+Create/update:
+- Assistant.jsx
+- ChatMessage.jsx
+- assistantService.js if required
+The assistant answers lease and building-policy questions.
+Use a clean conversation layout with user and assistant messages,
+a source section for grounded documents, and a bottom input composer.
+Use olive #6C7750 as the AI accent and very light warm gold
+for the AI sparkle/icon only.
+Do not copy the visual design of ChatGPT and do not introduce purple/neon colors.
+Keep the same Meridian navbar, sidebar, typography, cards, spacing and responsive behavior.
+
+--- page 16 ---
+Meridian Residences — Official UI Development Guide
+Page 17
+15. Figma / Design Review Checklist
+Use this checklist before approving a page or merging UI work.
+Check
+Pass condition
+Brand
+Meridian forest green/olive/gold/warm cream/white palette is respected
+Shell
+Shared Navbar and Sidebar are reused
+Typography
+Inter + approved sizes/weights are used
+Cards
+White, 1px border, 12px radius, 20px padding, subtle shadow
+Spacing
+Uses the 4px-based spacing scale
+Buttons
+Primary/secondary/destructive behavior follows the standard
+Status
+Semantic colors match the fixed mapping
+Icons
+Lucide React only
+Responsive
+Desktop, tablet and mobile states are handled
+Accessibility
+Controls have readable labels, visible focus and usable contrast
+Consistency
+Page looks like part of the same application
+Scope
+No unrelated redesign or dependency added
+Visual QA questions
+ If I hide the page title, can I still tell this is Meridian Residences?
+ Does it look like the same product as the other three members' pages?
+ Are the most important resident actions obvious within a few seconds?
+ Are money, dates, priority and status easy to scan?
+ Does mobile preserve the same hierarchy instead of becoming a completely different design?
+
+--- page 17 ---
+Meridian Residences — Official UI Development Guide
+Page 18
+16. Final Official UI Identity
+Meridian Residences =
+ Forest Green + Olive + Champagne Gold + Warm Cream + White
+ Inter typography
+ 12px rounded cards
+ Clean 240px sidebar dashboard
+ 64px shared top navbar
+ Subtle shadows and borders
+ Lucide icons
+ Minimal animations
+ Premium serviced-apartment feel
+Implementation rule
+The shared design system should be created first, then frozen while the four members build their story-specific
+pages. Future GPT requests should include the Master UI Instruction or refer to this document as the source of
+truth. This prevents UI drift across the team.
+Recommended repository location
+frontend/src/
+■■■ components/
+■■■ pages/
+■■■ services/
+■■■ hooks/
+■■■ context/
+■■■ styles/
+■■■ theme.js
+■■■ global.css
+■■■ components.css
+Document status: Official Team 5 UI reference for development and AI-assisted implementation.
+Source basis: the Team 5 Meridian Residences UI specification supplied for this project, including the official color palette, shell, page
+patterns, shared components, responsive rules and team workflow.
+
