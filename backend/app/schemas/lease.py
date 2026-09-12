@@ -12,8 +12,15 @@ from __future__ import annotations
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, PlainSerializer
+
+# Contract section 4: "Money: decimal in DB; JSON number: 12500.00" - Pydantic
+# v2 serializes bare Decimal fields as JSON strings by default (to avoid
+# float precision loss), which violates that rule. This forces a plain JSON
+# number on the wire while keeping Decimal for validation/business logic.
+MoneyAmount = Annotated[Decimal, PlainSerializer(lambda v: float(v), return_type=float, when_used="json")]
 
 
 class UnitOut(BaseModel):
@@ -40,7 +47,7 @@ class LeaseOut(BaseModel):
     property: PropertyOut
     start_date: date
     end_date: date
-    monthly_rate: Decimal
+    monthly_rate: MoneyAmount
     renewal_date: date | None = None
     status: str
     agreement_file_url: str | None = None
@@ -70,11 +77,11 @@ class LeaseListItemOut(BaseModel):
     status: str
     start_date: date
     end_date: date
-    monthly_rate: Decimal
+    monthly_rate: MoneyAmount
 
 
 class NextPaymentOut(BaseModel):
-    amount: Decimal
+    amount: MoneyAmount
     due_date: date
 
 
