@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 
-PAYMENT_STATUSES = ("pending", "paid", "overdue", "cancelled")
+PAYMENT_STATUSES = ("pending", "payment_submitted", "paid", "overdue", "cancelled")
 
 
 class RecurringInvoice(Base):

@@ -1,5 +1,5 @@
 import React from "react";
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronRight, Download } from "lucide-react";
 import Card from "./Card.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 
@@ -26,9 +26,22 @@ function formatPeriod(start, end) {
   return `${startDate.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`;
 }
 
-export default function InvoiceCard({ invoice }) {
+export default function InvoiceCard({ invoice, onDownload, isStaff, isSelected, onSelect, onPay, onExtendDueDate }) {
+  const canSelect = isStaff && ["pending", "payment_submitted"].includes(invoice.payment_status);
+  const canPay = !isStaff && ["pending", "overdue"].includes(invoice.payment_status);
+
   return (
     <Card className="invoice-row">
+      <label className={`invoice-row__select${isStaff ? "" : " invoice-row__select--empty"}`} title={isStaff ? "Select invoice" : undefined}>
+        {isStaff && (
+          <input
+            type="checkbox"
+            checked={Boolean(isSelected)}
+            disabled={!canSelect}
+            onChange={() => onSelect(invoice.id)}
+          />
+        )}
+        </label>
       <div className="invoice-row__period">
         <div className="invoice-row__icon"><CalendarDays size={18} /></div>
         <div>
@@ -44,8 +57,36 @@ export default function InvoiceCard({ invoice }) {
         <span className="invoice-row__label">Due date</span>
         <strong>{formatDate(invoice.due_date)}</strong>
       </div>
-      <StatusBadge status={invoice.payment_status} />
-      <ChevronRight className="invoice-row__chevron" size={18} />
+      <div className="invoice-row__status"><StatusBadge status={invoice.payment_status} /></div>
+      <div className="invoice-row__actions">
+        {canPay && (
+          <button type="button" className="invoice-row__pay" onClick={() => onPay(invoice)}>
+            Pay amount
+          </button>
+        )}
+        {invoice.payment_status === "payment_submitted" && (
+          <span className="invoice-row__awaiting">Awaiting approval</span>
+        )}
+        {isStaff && onExtendDueDate && invoice.payment_status !== "paid" && (
+          <button type="button" className="invoice-row__extend" onClick={() => onExtendDueDate(invoice)}>
+            Extend due date
+          </button>
+        )}
+        {onDownload && (
+          <button
+            type="button"
+            className="invoice-row__download"
+            title="Download invoice PDF"
+            onClick={(event) => {
+              event.stopPropagation();
+              onDownload(invoice.id);
+            }}
+          >
+            <Download size={16} />
+          </button>
+        )}
+        <ChevronRight className="invoice-row__chevron" size={18} />
+      </div>
     </Card>
   );
 }

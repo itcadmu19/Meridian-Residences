@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    # Local Ollama server used for the Story 2 invoice payment-insight feature (no API key needed).
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "llama3.2:3b"
+
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
 
 
