@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60
 
+    ai_triage_api_url: str = "http://ollama:11434/api/generate"
+    ai_triage_api_key: str | None = None
+    ai_triage_model: str = "llama3.2"
+    ai_triage_timeout_seconds: float = 30.0
+
     model_config = SettingsConfigDict(env_file="../.env", extra="ignore")
 
 

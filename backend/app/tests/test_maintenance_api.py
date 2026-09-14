@@ -85,6 +85,90 @@ def test_get_missing_ticket_returns_404(client, auth_headers):
     assert response.status_code == 404
 
 
+def test_resident_cannot_update_own_ticket(client, auth_headers):
+    created = client.post(
+        "/api/v1/maintenance-tickets",
+        json={"issue_type": "general", "description": "Squeaky door hinge"},
+        headers=auth_headers,
+    ).json()["data"]
+
+    updated = client.patch(
+        f"/api/v1/maintenance-tickets/{created['id']}",
+        json={"status": "in_progress", "priority": "low"},
+        headers=auth_headers,
+    )
+
+    assert updated.status_code == 403
+
+
+def test_marking_resolved_sets_resolved_at_automatically(client, auth_headers):
+    created = client.post(
+        "/api/v1/maintenance-tickets",
+        json={"issue_type": "general", "description": "Loose cabinet handle"},
+        headers=auth_headers,
+    ).json()["data"]
+    assert created["resolved_at"] is None
+
+    resolved = client.patch(
+        f"/api/v1/maintenance-tickets/{created['id']}",
+        json={"status": "resolved"},
+        headers=auth_headers,
+    ).json()["data"]
+    assert resolved["resolved_at"] is not None
+
+    reopened = client.patch(
+        f"/api/v1/maintenance-tickets/{created['id']}",
+        json={"status": "open"},
+        headers=auth_headers,
+    ).json()["data"]
+    assert reopened["resolved_at"] is None
+
+
+def test_cancel_ticket_via_status_update(client, auth_headers):
+    created = client.post(
+        "/api/v1/maintenance-tickets",
+        json={"issue_type": "other", "description": "Resident changed their mind"},
+        headers=auth_headers,
+    ).json()["data"]
+
+    cancelled = client.patch(
+        f"/api/v1/maintenance-tickets/{created['id']}",
+        json={"status": "cancelled"},
+        headers=auth_headers,
+    )
+
+    assert cancelled.status_code == 200
+    assert cancelled.json()["data"]["status"] == "cancelled"
+
+
+def test_create_ticket_with_photo_attachment(client, auth_headers):
+    photo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+
+    response = client.post(
+        "/api/v1/maintenance-tickets",
+        json={"issue_type": "plumbing", "description": "Leaking pipe, photo attached", "photo_data_url": photo},
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 201
+    assert response.json()["data"]["photo_data_url"] == photo
+
+
+def test_triage_reason_is_persisted_for_ticket_detail(client, auth_headers):
+    created = client.post(
+        "/api/v1/maintenance-tickets",
+        json={"issue_type": "plumbing", "description": "There is a water leak under the kitchen sink"},
+        headers=auth_headers,
+    ).json()["data"]
+
+    client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=auth_headers)
+
+    detail = client.get(f"/api/v1/maintenance-tickets/{created['id']}", headers=auth_headers)
+
+    assert detail.status_code == 200
+    assert detail.json()["data"]["triage_reason"] == "Water leak requires urgent escalation."
+
+
 def test_resident_cannot_access_another_residents_ticket(client, auth_headers, db_session):
     import uuid as uuid_module
 

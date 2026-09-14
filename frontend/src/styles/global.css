@@ -28,15 +28,20 @@ html {
 
 body {
   margin: 0;
-  background: var(--background);
+  background: linear-gradient(135deg, #f7f0e6 0%, #eef3ee 100%);
   color: var(--text);
   font-family: "Inter", sans-serif;
   font-size: 14px;
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 button {
@@ -46,6 +51,207 @@ button {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  background: linear-gradient(135deg, #f8f4ed 0%, #ecf0e8 100%);
+}
+
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px 48px;
+}
+
+.auth-panel--gradient {
+  background: radial-gradient(circle at top left, rgba(255,255,255,0.17), transparent 30%), linear-gradient(135deg, #26382a 0%, #42553b 48%, #7a8c52 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-panel--gradient::after {
+  content: "";
+  position: absolute;
+  inset: 20% -10% auto auto;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.auth-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.auth-panel--gradient h1 {
+  font-size: clamp(2.5rem, 4vw, 4.1rem);
+  line-height: 1.04;
+  margin: 22px 0 14px;
+  max-width: 440px;
+}
+
+.auth-panel--gradient p {
+  max-width: 430px;
+  color: rgba(255,255,255,0.8);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.auth-feature-list {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.auth-feature-list span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 12px;
+  color: rgba(255,255,255,0.9);
+}
+
+.auth-panel--form {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(38,56,42,0.05);
+}
+
+.auth-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.auth-header-row h2 {
+  margin: 6px 0 0;
+  font-size: 2.1rem;
+  color: var(--primary);
+}
+
+.auth-link {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.auth-form {
+  display: grid;
+  gap: 18px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-group {
+  display: grid;
+  gap: 18px;
+}
+
+.field-group--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field__label {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid rgba(38,56,42,0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.9);
+  padding: 12px 14px;
+  color: var(--text);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: rgba(38,56,42,0.5);
+  box-shadow: 0 0 0 4px rgba(38,56,42,0.08);
+}
+
+.password-strength {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.password-strength--strong {
+  color: var(--success);
+}
+
+.password-strength--medium {
+  color: #c9892f;
+}
+
+.password-strength--weak,
+.password-strength--neutral {
+  color: #8d8d8d;
+}
+
+.form-error {
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: rgba(177, 72, 72, 0.08);
+  border: 1px solid rgba(177, 72, 72, 0.15);
+  color: #9b2b2b;
+  font-weight: 600;
+}
+
+.auth-button {
+  width: 100%;
+  justify-content: center;
+  padding: 14px 18px;
+  border-radius: 12px;
+  margin-top: 6px;
+}
+
+.auth-demo-box {
+  margin-top: 24px;
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: rgba(108,119,80,0.06);
+  border: 1px solid rgba(108,119,80,0.12);
+  border-radius: 12px;
+  color: var(--primary);
+}
+
+.auth-demo-box strong {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-demo-box span {
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .app-shell {
@@ -1781,3 +1987,132 @@ a {
     display: none;
   }
 }
+
+/* ---------- Maintenance: photo, actions, detail, escalation ---------- */
+
+.ticket-card__photo {
+  display: block;
+  width: auto;
+  max-width: min(100%, 360px);
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+}
+
+.ticket-card__actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid #eee9df;
+}
+
+.text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--secondary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.text-link:hover {
+  color: var(--primary);
+}
+
+.photo-preview {
+  display: block;
+  margin-top: 9px;
+  width: min(100%, 240px);
+  height: 140px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.ticket-detail__badges {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.ticket-detail__description {
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.ticket-detail__photo {
+  display: block;
+  width: auto;
+  max-width: min(100%, 420px);
+  height: auto;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+}
+
+.ticket-detail__reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  background: #f4edda;
+  color: #80682d;
+  font-size: 12px;
+}
+
+.ticket-detail__timeline {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eee9df;
+}
+
+.ticket-detail__timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.ticket-detail__timeline-item strong {
+  margin-left: auto;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.escalation-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  border-radius: 9px;
+  background: #f4e6e1;
+  color: #895446;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.escalation-banner__close {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  place-items: center;
+}
+

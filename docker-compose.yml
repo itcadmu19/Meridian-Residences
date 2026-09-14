@@ -29,11 +29,38 @@ services:
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      AI_TRIAGE_API_URL: ${AI_TRIAGE_API_URL:-http://ollama:11434/api/generate}
+      AI_TRIAGE_API_KEY: ${AI_TRIAGE_API_KEY:-}
+      AI_TRIAGE_MODEL: ${AI_TRIAGE_MODEL:-llama3.2}
+      AI_TRIAGE_TIMEOUT_SECONDS: ${AI_TRIAGE_TIMEOUT_SECONDS:-30}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     ports:
       - "8000:8000"
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: meridian-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: meridian-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+    ports:
+      - "5050:80"
     depends_on:
       postgres:
         condition: service_healthy
 
 volumes:
   meridian_postgres_data:
+  ollama_data:

@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock } from "lucide-react";
+import { Clock, Eye, Pencil } from "lucide-react";
 import Card from "./Card.jsx";
 import StatusBadge from "./StatusBadge.jsx";
 import PriorityBadge from "./PriorityBadge.jsx";
@@ -22,7 +22,7 @@ const ISSUE_TYPE_LABELS = {
   other: "Other",
 };
 
-export default function MaintenanceCard({ ticket }) {
+export default function MaintenanceCard({ ticket, onViewDetails, onManage, canManage = false }) {
   const shortId = ticket.id ? `MT-${String(ticket.id).slice(-3).toUpperCase()}` : "MT-NEW";
 
   return (
@@ -41,14 +41,35 @@ export default function MaintenanceCard({ ticket }) {
         </div>
       </div>
 
+      {ticket.photo_data_url && (
+        <img className="ticket-card__photo" src={ticket.photo_data_url} alt="Reported issue" />
+      )}
+
       <div className="ticket-card__meta">
         <Clock size={14} />
         <span className="ticket-card__date">Submitted: {formatDate(ticket.created_at)}</span>
+        {ticket.resolved_at && (
+          <span className="ticket-card__date">· Resolved: {formatDate(ticket.resolved_at)}</span>
+        )}
         {ticket.vendor_queue && (
           <span className="ticket-card__date">· Vendor queue: {ticket.vendor_queue}</span>
         )}
         {ticket.escalated && <span className="badge badge--error">ESCALATED</span>}
       </div>
+
+      <div className="ticket-card__actions">
+        <button type="button" className="text-link" onClick={() => onViewDetails(ticket)}>
+          <Eye size={14} />
+          View Details
+        </button>
+        {canManage && onManage && (
+          <button type="button" className="text-link" onClick={() => onManage(ticket)}>
+            <Pencil size={14} />
+            Update
+          </button>
+        )}
+      </div>
     </Card>
   );
 }
+

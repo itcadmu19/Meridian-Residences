@@ -1,24 +1,16 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import Card from "../components/Card.jsx";
-import Input from "../components/Input.jsx";
-import Button from "../components/Button.jsx";
 
 export default function Login() {
-  const { login, isSubmitting } = useAuth();
+  const { login, isSubmitting, error } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError(null);
 
-    // Read straight from the submitted form, not just React state — some
-    // browsers/password managers autofill the DOM without firing onChange,
-    // which would otherwise silently submit stale/empty credentials.
     const formData = new FormData(event.currentTarget);
     const submittedEmail = String(formData.get("email") || "").trim();
     const submittedPassword = String(formData.get("password") || "");
@@ -27,46 +19,76 @@ export default function Login() {
       await login(submittedEmail, submittedPassword);
       navigate("/");
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      // error already surfaced in context
     }
   }
 
   return (
-    <div className="page" style={{ maxWidth: 420, margin: "80px auto" }}>
-      <Card>
-        <h1 className="page-header__title" style={{ marginBottom: 4 }}>
-          Meridian Residences
-        </h1>
-        <p className="page-header__description" style={{ marginBottom: 24 }}>
-          Sign in to your resident portal.
+    <div className="auth-page">
+      <div className="auth-panel auth-panel--gradient">
+        <div className="auth-badge">Meridian Residences</div>
+        <h1>Welcome back</h1>
+        <p>
+          Manage your home, maintenance requests, and resident services with ease.
         </p>
-        <form onSubmit={handleSubmit}>
-          <Input
-            id="email"
-            name="email"
-            label="Email"
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-          <Input
-            id="password"
-            name="password"
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            error={error}
-            required
-          />
-          <Button type="submit" disabled={isSubmitting} style={{ width: "100%", justifyContent: "center" }}>
+        <div className="auth-feature-list">
+          <span>Live updates</span>
+          <span>Track requests</span>
+          <span>Resident dashboard</span>
+        </div>
+      </div>
+
+      <div className="auth-panel auth-panel--form">
+        <div className="auth-header-row">
+          <div>
+            <div className="eyebrow">Access portal</div>
+            <h2>Sign in</h2>
+          </div>
+          <Link to="/register" className="auth-link">Register</Link>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="field">
+            <label className="field__label" htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              className="input"
+              autoComplete="username"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </div>
+
+          <div className="field">
+            <label className="field__label" htmlFor="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              className="input"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </div>
+
+          {error && <div className="form-error">{error}</div>}
+
+          <button type="submit" className="btn btn--primary auth-button" disabled={isSubmitting}>
             {isSubmitting ? "Signing in..." : "Sign In"}
-          </Button>
+          </button>
         </form>
-      </Card>
+
+        <div className="auth-demo-box">
+          <strong>Demo accounts</strong>
+          <span>Resident: anu.sharma@example.com / ResidentPass123!</span>
+          <span>Staff: staff@meridian.com / StaffPass123!</span>
+        </div>
+      </div>
     </div>
   );
 }

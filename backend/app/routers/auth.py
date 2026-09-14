@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.auth import LoginRequest, RegisterRequest, RegisterResponse, TokenResponse
 from app.services import auth_service
-from app.services.auth_service import InvalidCredentialsError
+from app.services.auth_service import EmailAlreadyExistsError, InvalidCredentialsError
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -18,3 +18,14 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             status_code=401,
             detail={"message": "Invalid email or password", "error_code": "INVALID_CREDENTIALS"},
         )
+
+
+@router.post("/register", response_model=RegisterResponse, status_code=201)
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    try:
+        return auth_service.register(db, payload)
+    except EmailAlreadyExistsError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"message": str(exc), "error_code": "EMAIL_ALREADY_EXISTS"},
+        ) from exc

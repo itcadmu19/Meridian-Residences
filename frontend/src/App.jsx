@@ -9,6 +9,7 @@ import Lease from "./pages/Lease.jsx";
 import Invoices from "./pages/Invoices.jsx";
 import ComingSoon from "./pages/ComingSoon.jsx";
 import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 
 export default function App() {
@@ -17,6 +18,8 @@ export default function App() {
   if (!currentUser) {
     return (
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="*" element={<Login />} />
       </Routes>
     );

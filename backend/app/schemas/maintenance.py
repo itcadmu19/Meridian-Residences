@@ -14,6 +14,8 @@ class MaintenanceTicketCreate(BaseModel):
     # never trusted from the client (Design Contract §16).
     issue_type: IssueType
     description: str = Field(min_length=1, max_length=2000)
+    # Optional base64 data URL (e.g. "data:image/jpeg;base64,..."), capped well under typical request-body limits.
+    photo_data_url: str | None = Field(default=None, max_length=1_400_000)
 
 
 class MaintenanceTicketUpdate(BaseModel):
@@ -33,6 +35,8 @@ class MaintenanceTicketResponse(BaseModel):
     status: TicketStatus
     vendor_queue: str | None
     escalated: bool
+    photo_data_url: str | None = None
+    triage_reason: str | None = None
     created_at: datetime
     updated_at: datetime
     resolved_at: datetime | None

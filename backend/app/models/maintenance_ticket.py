@@ -31,6 +31,8 @@ class MaintenanceTicket(Base):
     status: Mapped[str] = mapped_column(String(30), nullable=False, server_default="open")
     vendor_queue: Mapped[str | None] = mapped_column(String(100))
     escalated: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    photo_data_url: Mapped[str | None] = mapped_column(Text)
+    triage_reason: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

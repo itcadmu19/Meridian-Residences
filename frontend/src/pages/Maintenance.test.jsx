@@ -4,6 +4,12 @@ import userEvent from "@testing-library/user-event";
 import Maintenance from "./Maintenance.jsx";
 import maintenanceService from "../services/maintenanceService.js";
 
+const mockAuthState = { currentUser: { role: "resident", guest_id: "guest-1", unit_id: "unit-1", email: "resident@example.com" } };
+
+vi.mock("../context/AuthContext.jsx", () => ({
+  useAuth: () => mockAuthState,
+}));
+
 vi.mock("../services/maintenanceService.js", () => ({
   default: {
     getTickets: vi.fn(),
@@ -26,6 +32,12 @@ const SAMPLE_TICKET = {
 describe("Maintenance page", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAuthState.currentUser = {
+      role: "resident",
+      guest_id: "guest-1",
+      unit_id: "unit-1",
+      email: "resident@example.com",
+    };
   });
 
   it("shows a loading state while fetching tickets", () => {
@@ -65,6 +77,36 @@ describe("Maintenance page", () => {
     await waitFor(() => {
       expect(screen.getByText(/no maintenance requests/i)).toBeInTheDocument();
     });
+  });
+
+  it("hides staff-only update controls for residents", async () => {
+    maintenanceService.getTickets.mockResolvedValue({ data: [SAMPLE_TICKET] });
+
+    render(<Maintenance />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/kitchen sink is leaking/i)).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: /update/i })).not.toBeInTheDocument();
+  });
+
+  it("shows update controls for staff users", async () => {
+    mockAuthState.currentUser = {
+      role: "staff",
+      guest_id: "staff-1",
+      unit_id: "unit-1",
+      email: "staff@example.com",
+    };
+    maintenanceService.getTickets.mockResolvedValue({ data: [SAMPLE_TICKET] });
+
+    render(<Maintenance />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/kitchen sink is leaking/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: /update/i })).toBeInTheDocument();
   });
 
   it("submits a new request and triggers triage", async () => {

@@ -48,6 +48,31 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function register(payload) {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const created = await authService.register(payload);
+      const user = {
+        guest_id: created.guest_id,
+        unit_id: created.unit_id,
+        role: created.role,
+        email: created.email,
+        name: created.name,
+      };
+
+      localStorage.setItem(STORAGE_KEY, created.access_token);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+      setCurrentUser(user);
+      return user;
+    } catch (err) {
+      setError(err.message || "Unable to create account");
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   function logout() {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -55,7 +80,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ currentUser, login, logout, error, isSubmitting }),
+    () => ({ currentUser, login, register, logout, error, isSubmitting }),
     [currentUser, error, isSubmitting]
   );
 
