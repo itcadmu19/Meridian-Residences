@@ -7,8 +7,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy import select
 
+from app.core.config import get_settings
 from app.core.database import SessionLocal
 from app.models.document import Document, DocumentChunk
+
+NO_ANSWER_MESSAGE = "I can't find this in the lease or building policy documents."
 
 
 def _normalize_question(question: str) -> str:
@@ -60,12 +63,62 @@ def _extract_grounded_answer(question: str, chunk: DocumentChunk, document: Docu
     return text
 
 
+def _call_openai(question: str, context: str, settings) -> str:
+    from openai import OpenAI
+
+    client = OpenAI(api_key=settings.llm_api_key)
+    prompt = (
+        "Context:\n"
+        f"{context}\n\n"
+        f"Question: {question}\n\n"
+        "Answer the question using ONLY the context above. Do not use any outside "
+        "knowledge or make assumptions beyond what is stated in the context. If the "
+        f"context does not answer the question, respond exactly with: \"{NO_ANSWER_MESSAGE}\""
+    )
+    response = client.responses.create(
+        model=settings.llm_model or "gpt-5-nano",
+        input=[
+            {
+                "role": "system",
+                "content": (
+                    "You are a resident assistant for Meridian Residences. You must answer "
+                    "strictly using only the context provided in the user message."
+                ),
+            },
+            {"role": "user", "content": prompt},
+        ],
+    )
+    answer = response.output_text
+    if not answer or not answer.strip():
+        raise ValueError("Empty response from LLM")
+    return answer.strip()
+
+
+def generate_answer(question: str, matches: list[dict[str, Any]]) -> str:
+    settings = get_settings()
+    if settings.llm_api_key:
+        context = "\n\n".join(match["content"] for match in matches)
+        try:
+            return _call_openai(question, context, settings)
+        except Exception:
+            pass
+    # Fallback: prefer the first match with substantive content over a bare header chunk.
+    for match in matches:
+        if len(match["content"].split()) > 4:
+            return _extract_grounded_answer(question, match["chunk"], match["document"])
+    return _extract_grounded_answer(question, matches[0]["chunk"], matches[0]["document"])
+
+
 def _question_topic(question: str) -> str | None:
     lower = question.lower()
     if any(token in lower for token in ["parking", "vehicle", "guest parking", "fee", "monthly fee", "apartment parking"]):
         return "parking"
     if any(token in lower for token in ["lease", "termination", "notice", "security deposit", "move-out", "move out"]):
         return "lease"
+    if any(token in lower for token in ["pet", "pets", "dog", "dogs", "cat", "cats", "animal"]):
+        return "pets"
+    if any(token in lower for token in ["quiet hours", "noise", "quiet hour"]):
+        return "quiet_hours"
     return None
 
 
@@ -112,8 +165,7 @@ def handle_chat(question: str, conversation_id: str | None = None) -> dict[str, 
             "conversation_id": conversation_id or str(uuid.uuid4()),
         }
 
-    first_match = matches[0]
-    answer = _extract_grounded_answer(normalized, first_match["chunk"], first_match["document"])
+    answer = generate_answer(normalized, matches)
     sources = [
         {
             "document_id": match["document_id"],
