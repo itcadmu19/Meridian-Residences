@@ -173,6 +173,15 @@ def test_staff_can_extend_due_date_and_period_end_moves_with_it(client):
     assert response.status_code == 200
     assert response.json()["data"]["due_date"] == "2027-04-25"
     assert response.json()["data"]["billing_period_end"] == "2027-04-24"
+    assert response.json()["data"]["payment_status"] == "due_extended"
+
+    resident_invoice = client.get(f"/api/v1/invoices/{invoice_id}", headers=resident_headers)
+    assert resident_invoice.status_code == 200
+    assert resident_invoice.json()["data"]["payment_status"] == "due_extended"
+
+    payment = client.post(f"/api/v1/invoices/{invoice_id}/pay", headers=resident_headers)
+    assert payment.status_code == 200
+    assert payment.json()["data"]["payment_status"] == "payment_submitted"
 
 
 def test_resident_cannot_generate_batch(client):

@@ -10,6 +10,7 @@ const STATUS_STYLES = {
   // Invoice
   paid: "success",
   overdue: "error",
+  due_extended: "info",
   cancelled: "neutral",
   // Maintenance ticket
   open: "info",

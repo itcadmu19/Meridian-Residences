@@ -252,6 +252,7 @@ def extend_due_date(db: Session, invoice_id: UUID, due_date: date, guest_id: UUI
         raise ValueError("Due date must be after the billing period start")
     invoice.due_date = due_date
     invoice.billing_period_end = due_date - timedelta(days=1)
+    invoice.payment_status = "due_extended"
     db.commit()
     db.refresh(invoice)
     return invoice
@@ -274,8 +275,8 @@ def submit_payment(db: Session, invoice_id: UUID, guest_id: UUID, role: str):
     invoice = get_invoice(db, invoice_id, guest_id, role)
     if role in ("staff", "admin"):
         raise InvoiceAccessDeniedError()
-    if invoice.payment_status not in ("pending", "overdue"):
-        raise ValueError("Only pending or overdue invoices can be paid")
+    if invoice.payment_status not in ("pending", "overdue", "due_extended"):
+        raise ValueError("Only pending, overdue, or due-extended invoices can be paid")
     invoice.payment_status = "payment_submitted"
     invoice.paid_at = None
     invoice.sent_at = datetime.now(timezone.utc)

@@ -20,6 +20,7 @@ const FILTERS = [
   { key: "payment_submitted", label: "Awaiting approval" },
   { key: "paid", label: "Paid" },
   { key: "overdue", label: "Overdue" },
+  { key: "due_extended", label: "Due extended" },
 ];
 
 function getDefaultBillingDates() {
@@ -323,7 +324,7 @@ export default function Invoices() {
   }, [activeFilter, invoices]);
 
   const totalOutstanding = invoices
-    .filter((invoice) => ["pending", "payment_submitted", "overdue"].includes(invoice.payment_status))
+    .filter((invoice) => ["pending", "payment_submitted", "overdue", "due_extended"].includes(invoice.payment_status))
     .reduce((total, invoice) => total + Number(invoice.amount), 0);
   const nextInvoice = invoices
     .filter((invoice) => invoice.payment_status === "pending")

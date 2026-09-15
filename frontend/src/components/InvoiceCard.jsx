@@ -28,7 +28,7 @@ function formatPeriod(start, end) {
 
 export default function InvoiceCard({ invoice, onDownload, isStaff, isSelected, onSelect, onPay, onExtendDueDate }) {
   const canSelect = isStaff && ["pending", "payment_submitted"].includes(invoice.payment_status);
-  const canPay = !isStaff && ["pending", "overdue"].includes(invoice.payment_status);
+  const canPay = !isStaff && ["pending", "overdue", "due_extended"].includes(invoice.payment_status);
 
   return (
     <Card className="invoice-row">

@@ -5,7 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-PaymentStatus = Literal["pending", "payment_submitted", "paid", "overdue", "cancelled"]
+PaymentStatus = Literal["pending", "payment_submitted", "paid", "overdue", "due_extended", "cancelled"]
 
 
 class InvoiceResponse(BaseModel):
