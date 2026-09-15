@@ -22,18 +22,24 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
-    if (error.response?.status === 401) {
+    const envelope = error.response?.data;
+    const detail = envelope?.detail;
+    const isStaffAuthorizationFailure =
+      error.response?.status === 403 &&
+      (detail?.error_code === "FORBIDDEN" || detail?.message?.includes("staff"));
+
+    if (error.response?.status === 401 || isStaffAuthorizationFailure) {
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
       window.dispatchEvent(new Event("auth:unauthorized"));
     }
 
-    const envelope = error.response?.data;
     const normalized = {
       success: false,
       data: null,
-      message: envelope?.message || error.message || "Unexpected error",
-      error_code: envelope?.error_code || "UNKNOWN_ERROR",
+      message:
+        detail?.message || envelope?.message || error.message || "Unexpected error",
+      error_code: detail?.error_code || envelope?.error_code || "UNKNOWN_ERROR",
       status: error.response?.status || null,
     };
     return Promise.reject(normalized);

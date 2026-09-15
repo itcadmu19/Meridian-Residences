@@ -32,6 +32,14 @@ const FILTER_TABS = [
   { key: "resolved", label: "Resolved" },
 ];
 
+const PRIORITY_FILTER_OPTIONS = [
+  { value: "all", label: "All priorities" },
+  { value: "urgent", label: "Urgent" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
+];
+
 const EMPTY_FORM = { issue_type: "plumbing", description: "" };
 const MAX_PHOTO_BYTES = 1_000_000;
 
@@ -60,6 +68,7 @@ export default function Maintenance() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState("all");
+  const [activePriority, setActivePriority] = useState("all");
 
   const [detailTicket, setDetailTicket] = useState(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
@@ -85,9 +94,12 @@ export default function Maintenance() {
   }, []);
 
   const filteredTickets = useMemo(() => {
-    if (activeFilter === "all") return maintenanceTickets;
-    return maintenanceTickets.filter((ticket) => ticket.status === activeFilter);
-  }, [maintenanceTickets, activeFilter]);
+    return maintenanceTickets.filter((ticket) => {
+      const matchesStatus = activeFilter === "all" || ticket.status === activeFilter;
+      const matchesPriority = activePriority === "all" || ticket.priority === activePriority;
+      return matchesStatus && matchesPriority;
+    });
+  }, [maintenanceTickets, activeFilter, activePriority]);
 
   function openModal() {
     setForm(EMPTY_FORM);
@@ -208,6 +220,21 @@ export default function Maintenance() {
             {tab.label}
           </button>
         ))}
+        <label className="priority-filter">
+          <span className="priority-filter__label">Priority</span>
+          <select
+            className="priority-filter__select"
+            value={activePriority}
+            onChange={(event) => setActivePriority(event.target.value)}
+            aria-label="Filter maintenance requests by priority"
+          >
+            {PRIORITY_FILTER_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {isLoading && <Loading label="Loading maintenance requests..." />}

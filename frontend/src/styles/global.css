@@ -1675,6 +1675,33 @@ a {
   background: var(--primary);
 }
 
+.priority-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.priority-filter__select {
+  min-height: 34px;
+  padding: 0 30px 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.priority-filter__select:focus {
+  outline: 2px solid rgba(38, 92, 82, 0.2);
+  border-color: var(--secondary);
+}
+
 .ticket-list,
 .invoice-list {
   display: grid;
