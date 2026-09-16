@@ -11,10 +11,18 @@ issue tokens - no story in the ownership matrix currently owns a login
 endpoint. `create_access_token` below exists only so tests (and whichever
 story ends up owning login) have a single, contract-consistent way to mint
 a token; it is not wired to any HTTP route.
+
+Staff Lease Management feature: `hash_password`/`verify_password` and
+`require_staff` back a real login (see services/auth_service.py), ported
+from teammate feature-lavanya's branch. Staff/admin already bypass the
+per-guest ownership check below (global access - property managers aren't
+scoped to one property), so no separate per-owner authorization helper is
+needed.
 """
 
 from __future__ import annotations
 
+import bcrypt
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -32,11 +40,22 @@ _bearer_scheme = HTTPBearer(auto_error=False)
 class CurrentUser:
     guest_id: UUID
     role: str = "resident"
+    unit_id: UUID | None = None
 
 
-def create_access_token(guest_id: UUID, role: str = "resident") -> str:
+def hash_password(plain_password: str) -> str:
+    return bcrypt.hashpw(plain_password.encode(), bcrypt.gensalt()).decode()
+
+
+def verify_password(plain_password: str, password_hash: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), password_hash.encode())
+
+
+def create_access_token(guest_id: UUID, role: str = "resident", unit_id: UUID | None = None) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
     payload = {"guest_id": str(guest_id), "role": role, "exp": expire}
+    if unit_id is not None:
+        payload["unit_id"] = str(unit_id)
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
@@ -63,6 +82,7 @@ def get_current_guest_id(
         )
         raw_guest_id = payload["guest_id"]
         role = payload.get("role", "resident")
+        raw_unit_id = payload.get("unit_id")
     except (JWTError, KeyError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -71,13 +91,37 @@ def get_current_guest_id(
 
     try:
         guest_id = UUID(raw_guest_id)
+        unit_id = UUID(raw_unit_id) if raw_unit_id is not None else None
     except (ValueError, TypeError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid authentication credentials.",
         )
 
-    return CurrentUser(guest_id=guest_id, role=role)
+    return CurrentUser(guest_id=guest_id, role=role, unit_id=unit_id)
+
+
+def require_staff(current_user: CurrentUser = Depends(get_current_guest_id)) -> CurrentUser:
+    """Staff Lease Management feature - matches feature-lavanya's
+    require_staff semantics: staff/admin only, global (not scoped to a
+    single property)."""
+    if current_user.role not in ("staff", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Staff or admin role required."},
+        )
+    return current_user
+
+
+def require_resident(current_user: CurrentUser = Depends(get_current_guest_id)) -> CurrentUser:
+    """AI Assistant feature - resident-only, mirroring require_staff's
+    shape in the other direction (staff/admin get a 403)."""
+    if current_user.role != "resident":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"error_code": "FORBIDDEN", "message": "Resident role required."},
+        )
+    return current_user
 
 
 def authorize_lease_access(lease, current_user: CurrentUser) -> None:

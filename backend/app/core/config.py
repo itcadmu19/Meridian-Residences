@@ -32,5 +32,23 @@ class Settings(BaseSettings):
     # Observability
     log_level: str = "INFO"
 
+    # Invoice AI insight feature (ported from feature-annapoorna) - local
+    # Ollama server, no API key needed. If unreachable, invoice_insight_agent
+    # falls back to a deterministic rule-based insight. Explicit 127.0.0.1
+    # (not "localhost") - "localhost" resolves IPv6 first on this stack,
+    # which hangs until the connect timeout before even trying IPv4,
+    # roughly doubling the fallback delay (see ai/ollama_client.py).
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "llama3.2:3b"
+
+    # AI Assistant feature (ported from feature-Sanjana) - optional cloud
+    # LLM path, only attempted if llm_api_key is set (see assistant_service.
+    # generate_answer's 3-tier fallback: cloud LLM -> local Ollama ->
+    # deterministic extraction). Names match the placeholders already
+    # reserved in .env.example.
+    llm_provider: str | None = None
+    llm_model: str | None = None
+    llm_api_key: str | None = None
+
 
 settings = Settings()

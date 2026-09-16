@@ -34,6 +34,7 @@ class LeaseAgreement(Base):
     renewal_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String, nullable=False, index=True)  # pending|active|expired|terminated
     agreement_file_url: Mapped[str | None] = mapped_column(String, nullable=True)
+    renewal_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

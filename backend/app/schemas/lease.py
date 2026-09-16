@@ -51,6 +51,7 @@ class LeaseOut(BaseModel):
     renewal_date: date | None = None
     status: str
     agreement_file_url: str | None = None
+    renewal_requested_at: datetime | None = None
 
     @classmethod
     def from_model(cls, lease) -> "LeaseOut":
@@ -66,6 +67,7 @@ class LeaseOut(BaseModel):
             renewal_date=lease.renewal_date,
             status=lease.status,
             agreement_file_url=lease.agreement_file_url,
+            renewal_requested_at=lease.renewal_requested_at,
         )
 
 
@@ -74,10 +76,17 @@ class LeaseListItemOut(BaseModel):
 
     id: uuid.UUID
     unit_id: uuid.UUID
+    unit: UnitOut
     status: str
     start_date: date
     end_date: date
     monthly_rate: MoneyAmount
+
+
+class RenewalRequestOut(BaseModel):
+    lease_id: uuid.UUID
+    renewal_requested_at: datetime
+    already_requested: bool
 
 
 class NextPaymentOut(BaseModel):
@@ -102,3 +111,63 @@ class LeaseSummaryOut(BaseModel):
     lease_status: str
     lease_end_date: date
     activities: list[ActivityItemOut] = []
+
+
+# --- Staff Lease Management (additive) --------------------------------------
+
+
+class GuestOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    email: str
+    phone: str | None = None
+
+
+class StaffLeaseListItemOut(BaseModel):
+    """Lease list shape for the staff persona - embeds guest/unit/property
+    since staff (unlike a resident) need to see whose lease it is and which
+    property it belongs to. Staff have global access (Decision: no
+    per-property scoping table), so this covers every property."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    guest: GuestOut
+    unit: UnitOut
+    property: PropertyOut
+    start_date: date
+    end_date: date
+    monthly_rate: MoneyAmount
+    renewal_date: date | None = None
+    status: str
+    created_at: datetime
+
+    @classmethod
+    def from_model(cls, lease) -> "StaffLeaseListItemOut":
+        return cls(
+            id=lease.id,
+            guest=GuestOut.model_validate(lease.guest),
+            unit=UnitOut.model_validate(lease.unit),
+            property=PropertyOut.model_validate(lease.unit.property),
+            start_date=lease.start_date,
+            end_date=lease.end_date,
+            monthly_rate=lease.monthly_rate,
+            renewal_date=lease.renewal_date,
+            status=lease.status,
+            created_at=lease.created_at,
+        )
+
+
+class LeaseEditIn(BaseModel):
+    """Only the fields staff may edit - explicitly not `status`, which goes
+    through the dedicated activate/renew/terminate actions instead."""
+
+    monthly_rate: Decimal | None = None
+    end_date: date | None = None
+    renewal_date: date | None = None
+
+
+class LeaseRenewIn(BaseModel):
+    new_end_date: date

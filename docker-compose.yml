@@ -1,0 +1,125 @@
+# Dockerizes the whole app: postgres + backend were already here (ported
+# from teammate feature-lavanya's branch); frontend and pgadmin are added
+# below. See backend/Dockerfile's comment for why backend's build context
+# is the repo root, not ./backend.
+#
+# Host ports were chosen to avoid every port already in use on this
+# machine (a local Windows PostgreSQL service on 5432, and another
+# process already on 5173) - see each service's `ports:` below. All
+# internal container-to-container traffic still uses the services'
+# standard ports (5432, 8000) regardless of these host-side mappings.
+#
+# Fresh database: the `postgres` service starts with an empty named
+# volume - it does NOT contain any data from a pre-existing local
+# PostgreSQL install. Ask for pg_dump/pg_restore steps if you want to
+# carry existing data over into this container instead of starting fresh.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: meridian-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-meridian_residences}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+    ports:
+      # Host 5433, not 5432 - a local Windows PostgreSQL service is
+      # already using 5432 on this machine. Internal traffic (backend,
+      # pgadmin) still targets port 5432 inside the Docker network.
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - meridian_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: meridian-backend
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-meridian_residences}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:5175}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-do-not-commit}
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 60
+      APP_ENV: development
+      LOG_LEVEL: INFO
+      # Local Ollama (invoice insights + AI lease agreement drafting) runs
+      # on the HOST machine, not in a container - Docker Desktop's special
+      # host.docker.internal DNS name lets this container reach it without
+      # hardcoding an IP. If Ollama isn't installed/running, these features
+      # already fall back to deterministic output (see app/ai/ollama_client.py) -
+      # nothing breaks, it just skips the AI-flavored wording.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2:3b}
+      # Optional cloud LLM fallback used only by the AI Assistant feature
+      # (app/services/assistant_service.py's 3-tier fallback). Left unset
+      # by default - the assistant still works via Ollama or its own
+      # deterministic extraction either way.
+      LLM_PROVIDER: ${LLM_PROVIDER:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    extra_hosts:
+      # Makes host.docker.internal resolve on Linux too (Docker Desktop on
+      # Windows/Mac already provides it natively) - harmless either way.
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: meridian-frontend
+    environment:
+      # Browser-facing URL - the browser runs on your host machine, not
+      # inside Docker, so this must stay a host-reachable address
+      # (localhost), never the "backend" Docker service name.
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000/api/v1}
+    ports:
+      # Host 5174, not 5173 - another process is already bound to 5173 on
+      # this machine. The container's own Vite server still listens on
+      # 5173 internally; only the host-side port differs.
+      - "${FRONTEND_PORT:-5174}:5173"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: meridian-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-change-me}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - meridian_pgadmin_data:/var/lib/pgadmin
+      # Pre-registers the "Meridian Residences" server (host/port/db/user
+      # only, never a password) so it already shows up in the tree on
+      # first login instead of requiring manual "Register Server" setup.
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  meridian_postgres_data:
+  meridian_pgadmin_data:

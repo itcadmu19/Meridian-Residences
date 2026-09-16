@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.config import settings
-from app.routers import leases
+from app.routers import assistant, auth, dev_auth, invoices, leases, maintenance, staff_leases
 
 app = FastAPI(title=settings.app_name)
 
@@ -74,6 +74,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 app.include_router(leases.router, prefix=settings.api_prefix)
+app.include_router(dev_auth.router, prefix=settings.api_prefix)
+app.include_router(auth.router, prefix=settings.api_prefix)
+app.include_router(staff_leases.router, prefix=settings.api_prefix)
+app.include_router(invoices.router, prefix=settings.api_prefix)
+app.include_router(maintenance.router, prefix=settings.api_prefix)
+app.include_router(assistant.router, prefix=settings.api_prefix)
 
 
 @app.get("/health")

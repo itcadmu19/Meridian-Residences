@@ -20,7 +20,9 @@ Expected interfaces (to confirm with Members 2/3 - see plan Phase 6):
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -32,8 +34,10 @@ from app.schemas.lease import (
     LeaseOut,
     LeaseSummaryOut,
     NextPaymentOut,
+    RenewalRequestOut,
     UnitOut,
 )
+from app.services.lease_agreement_pdf import generate_lease_agreement_pdf
 
 MAX_ACTIVITIES = 10
 
@@ -74,6 +78,49 @@ def get_leases_for_guest(
         .all()
     )
     return [LeaseListItemOut.model_validate(lease) for lease in rows], total
+
+
+def get_lease_agreement_pdf(db: Session, lease_id: uuid.UUID, current_user: CurrentUser) -> bytes:
+    """Generates a real, personalized lease agreement PDF on demand from
+    this lease's own data - see app/services/lease_agreement_pdf.py.
+    `agreement_file_url` is kept only as an "is an agreement available"
+    marker (e.g. a pending lease with nothing signed yet has none), not a
+    real file path - nothing is read from disk here."""
+    lease = _get_lease_or_none(db, lease_id)
+    authorize_lease_access(lease, current_user)  # raises 404 on missing/not-yours
+
+    if not lease.agreement_file_url:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error_code": "AGREEMENT_NOT_FOUND", "message": "No agreement on file for this lease."},
+        )
+
+    return generate_lease_agreement_pdf(lease)
+
+
+def request_lease_renewal(
+    db: Session, lease_id: uuid.UUID, current_user: CurrentUser
+) -> RenewalRequestOut:
+    lease = _get_lease_or_none(db, lease_id)
+    authorize_lease_access(lease, current_user)  # raises 404 on missing/not-yours
+
+    if lease.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error_code": "LEASE_NOT_ACTIVE", "message": "Only active leases can request renewal."},
+        )
+
+    already_requested = lease.renewal_requested_at is not None
+    if not already_requested:
+        lease.renewal_requested_at = datetime.now(timezone.utc)
+        db.commit()
+        db.refresh(lease)
+
+    return RenewalRequestOut(
+        lease_id=lease.id,
+        renewal_requested_at=lease.renewal_requested_at,
+        already_requested=already_requested,
+    )
 
 
 def _next_payment_and_activity(lease_id: uuid.UUID) -> tuple[NextPaymentOut | None, list[ActivityItemOut]]:

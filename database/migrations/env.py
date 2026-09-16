@@ -18,7 +18,15 @@ from app.core.database import Base
 
 # Import every model module so Base.metadata is fully populated for
 # autogenerate. Each story should add its own model import here.
-from app.models import guest, property, unit, lease_agreement  # noqa: F401
+from app.models import (  # noqa: F401
+    guest,
+    property,
+    unit,
+    lease_agreement,
+    resident_credential,
+    maintenance_ticket,
+    recurring_invoice,
+)
 
 config = context.config
 if config.config_file_name is not None:

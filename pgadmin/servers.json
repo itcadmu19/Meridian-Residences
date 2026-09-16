@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Meridian Residences",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "meridian_residences",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "Comment": "Docker Compose service - host is the 'postgres' service name, not localhost. If you changed POSTGRES_DB/POSTGRES_USER in your .env, update MaintenanceDB/Username here to match."
+    }
+  }
+}

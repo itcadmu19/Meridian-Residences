@@ -78,12 +78,31 @@ def seeded_lease(db_session):
         monthly_rate=Decimal("45000.00"),
         renewal_date=date(2026, 12, 1),
         status="active",
+        agreement_file_url="sample_lease_agreement.pdf",
         created_at=now,
         updated_at=now,
     )
-    db_session.add_all([guest, other_guest, prop, unit, lease])
+    pending_lease = LeaseAgreement(
+        id=uuid.uuid4(),
+        unit_id=unit.id,
+        guest_id=guest.id,
+        start_date=date(2027, 1, 1),
+        end_date=date(2027, 12, 31),
+        monthly_rate=Decimal("47000.00"),
+        status="pending",
+        agreement_file_url=None,
+        created_at=now,
+        updated_at=now,
+    )
+    db_session.add_all([guest, other_guest, prop, unit, lease, pending_lease])
     db_session.commit()
-    return {"guest": guest, "other_guest": other_guest, "unit": unit, "lease": lease}
+    return {
+        "guest": guest,
+        "other_guest": other_guest,
+        "unit": unit,
+        "lease": lease,
+        "pending_lease": pending_lease,
+    }
 
 
 def auth_header(guest_id: uuid.UUID) -> dict:
@@ -137,8 +156,10 @@ def test_get_guest_leases_returns_own_leases(client, seeded_lease):
     resp = client.get(f"/api/v1/guests/{guest.id}/leases", headers=auth_header(guest.id))
     assert resp.status_code == 200
     body = resp.json()
-    assert body["meta"]["total"] == 1
-    assert len(body["data"]) == 1
+    # guest has both the active lease and the pending one from the fixture.
+    assert body["meta"]["total"] == 2
+    assert len(body["data"]) == 2
+    assert body["data"][0]["unit"]["unit_number"] == "101"
 
 
 def test_dashboard_summary_degrades_gracefully_without_invoice_or_maintenance_services(
@@ -157,3 +178,106 @@ def test_dashboard_summary_degrades_gracefully_without_invoice_or_maintenance_se
     # The lease's own creation still produces one activity entry.
     assert len(data["activities"]) == 1
     assert data["activities"][0]["type"] == "lease"
+
+
+# --- Download agreement -----------------------------------------------
+
+
+def test_download_agreement_returns_pdf_when_file_present(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.get(
+        f"/api/v1/leases/{lease.id}/agreement", headers=auth_header(seeded_lease["guest"].id)
+    )
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content[:5] == b"%PDF-"
+
+
+def test_download_agreement_404_when_no_file_on_lease(client, seeded_lease):
+    lease = seeded_lease["pending_lease"]
+    resp = client.get(
+        f"/api/v1/leases/{lease.id}/agreement", headers=auth_header(seeded_lease["guest"].id)
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error_code"] == "AGREEMENT_NOT_FOUND"
+
+
+def test_download_agreement_blocked_for_other_resident(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.get(
+        f"/api/v1/leases/{lease.id}/agreement", headers=auth_header(seeded_lease["other_guest"].id)
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error_code"] == "LEASE_NOT_FOUND"
+
+
+def test_download_agreement_requires_auth(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.get(f"/api/v1/leases/{lease.id}/agreement")
+    assert resp.status_code == 401
+
+
+# --- Request renewal -----------------------------------------------
+
+
+def test_request_renewal_sets_timestamp_on_first_call(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.post(
+        f"/api/v1/leases/{lease.id}/renewal-request", headers=auth_header(seeded_lease["guest"].id)
+    )
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["already_requested"] is False
+    assert data["renewal_requested_at"] is not None
+
+
+def test_request_renewal_is_idempotent_on_repeat(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    headers = auth_header(seeded_lease["guest"].id)
+
+    first = client.post(f"/api/v1/leases/{lease.id}/renewal-request", headers=headers)
+    second = client.post(f"/api/v1/leases/{lease.id}/renewal-request", headers=headers)
+
+    assert first.status_code == 200 and second.status_code == 200
+    first_ts = first.json()["data"]["renewal_requested_at"]
+    second_data = second.json()["data"]
+    assert second_data["already_requested"] is True
+    assert second_data["renewal_requested_at"] == first_ts
+
+
+def test_request_renewal_rejects_non_active_lease(client, seeded_lease):
+    lease = seeded_lease["pending_lease"]
+    resp = client.post(
+        f"/api/v1/leases/{lease.id}/renewal-request", headers=auth_header(seeded_lease["guest"].id)
+    )
+    assert resp.status_code == 409
+    assert resp.json()["error_code"] == "LEASE_NOT_ACTIVE"
+
+
+def test_request_renewal_blocked_for_other_resident(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.post(
+        f"/api/v1/leases/{lease.id}/renewal-request",
+        headers=auth_header(seeded_lease["other_guest"].id),
+    )
+    assert resp.status_code == 404
+    assert resp.json()["error_code"] == "LEASE_NOT_FOUND"
+
+
+def test_request_renewal_requires_auth(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    resp = client.post(f"/api/v1/leases/{lease.id}/renewal-request")
+    assert resp.status_code == 401
+
+
+def test_get_lease_reflects_renewal_request_after_it_is_made(client, seeded_lease):
+    lease = seeded_lease["lease"]
+    headers = auth_header(seeded_lease["guest"].id)
+
+    before = client.get(f"/api/v1/leases/{lease.id}", headers=headers)
+    assert before.json()["data"]["renewal_requested_at"] is None
+
+    client.post(f"/api/v1/leases/{lease.id}/renewal-request", headers=headers)
+
+    after = client.get(f"/api/v1/leases/{lease.id}", headers=headers)
+    assert after.json()["data"]["renewal_requested_at"] is not None
