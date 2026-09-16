@@ -25,6 +25,7 @@ import {
   updatePaymentStatus,
 } from "../services/invoiceService";
 import { getStaffLeases } from "../services/staffLeaseService";
+import { getLease } from "../services/leaseService";
 import { useAuth } from "../context/AuthContext";
 import SummaryCard from "../components/SummaryCard";
 import StatusBadge from "../components/StatusBadge";
@@ -94,6 +95,11 @@ function formatCurrency(value) {
     currency: "INR",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function toMonthInput(dateString) {
+  // "YYYY-MM-DD" -> "YYYY-MM", matching <input type="month">'s value format.
+  return dateString ? dateString.slice(0, 7) : "";
 }
 
 function formatDate(value) {
@@ -242,21 +248,27 @@ function ExtendDueDateDialog({ open, invoice, busy, error, onConfirm, onCancel }
   );
 }
 
-function GenerateInvoiceDialog({ open, busy, error, onConfirm, onCancel }) {
+function GenerateInvoiceDialog({ open, busy, error, minMonth, maxMonth, onConfirm, onCancel }) {
   const [month, setMonth] = useState("");
 
   useEffect(() => {
     if (open) {
       const today = new Date();
-      setMonth(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`);
+      const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+      // Default to the current month, clamped into the lease's own window
+      // so the dialog never opens on a pre-selected, already-invalid month.
+      const clamped = minMonth && currentMonth < minMonth ? minMonth : maxMonth && currentMonth > maxMonth ? maxMonth : currentMonth;
+      setMonth(clamped);
     }
-  }, [open]);
+  }, [open, minMonth, maxMonth]);
 
   if (!open) return null;
 
+  const outOfRange = Boolean(month) && ((minMonth && month < minMonth) || (maxMonth && month > maxMonth));
+
   function handleSubmit(event) {
     event.preventDefault();
-    if (!month) return;
+    if (!month || outOfRange) return;
     onConfirm(month);
   }
 
@@ -270,17 +282,30 @@ function GenerateInvoiceDialog({ open, busy, error, onConfirm, onCancel }) {
         <form className="drawer-form" onSubmit={handleSubmit}>
           <label>
             Select invoice month
-            <input type="month" value={month} onChange={(event) => setMonth(event.target.value)} required />
+            <input
+              type="month"
+              value={month}
+              min={minMonth || undefined}
+              max={maxMonth || undefined}
+              onChange={(event) => setMonth(event.target.value)}
+              required
+            />
           </label>
           <p className="payment-helper">
             Covers the full month you pick; payment is due on the 10th of the following month.
+            {minMonth && maxMonth && ` Your lease only covers ${minMonth} through ${maxMonth}.`}
           </p>
+          {outOfRange && (
+            <div className="demo-notice demo-notice--error">
+              Pick a month within your lease term ({minMonth} to {maxMonth}).
+            </div>
+          )}
           {error && <div className="demo-notice demo-notice--error">{error}</div>}
           <div className="confirm-dialog-actions">
             <button type="button" className="secondary-button" onClick={onCancel} disabled={busy}>
               Cancel
             </button>
-            <button type="submit" className="primary-button" disabled={busy || !month}>
+            <button type="submit" className="primary-button" disabled={busy || !month || outOfRange}>
               {busy ? "Generating…" : "Generate invoice"}
             </button>
           </div>
@@ -302,6 +327,9 @@ export default function Invoices() {
   const [dateTo, setDateTo] = useState("");
   const [residentLeases, setResidentLeases] = useState([]);
   const [selectedResidentLeaseId, setSelectedResidentLeaseId] = useState("");
+  // Resident-only: their own lease's start/end dates, used to restrict which
+  // months "Generate invoice" allows - not fetched at all for staff.
+  const [ownLease, setOwnLease] = useState(null);
   // Matches the backend's own default order (due_date desc) so nothing
   // visually jumps on load - clicking a header re-sorts from there.
   const [sortKey, setSortKey] = useState("due_date");
@@ -349,6 +377,28 @@ export default function Invoices() {
       .catch(() => {
         // ignore - the picker just won't render, same graceful-degrade
         // pattern as the rest of this page's demo-data fallbacks
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [isStaff]);
+
+  // Resident-only: load their own lease's start/end dates once so the
+  // "Generate invoice" dialog can be restricted to the lease term.
+  useEffect(() => {
+    if (isStaff) return undefined;
+    const leaseId = localStorage.getItem("selected_lease_id");
+    if (!leaseId) return undefined;
+
+    let mounted = true;
+    getLease(leaseId)
+      .then((data) => {
+        if (mounted) setOwnLease(data);
+      })
+      .catch(() => {
+        // ignore - the picker just won't be date-restricted client-side;
+        // the backend still enforces the lease-term check either way.
       });
 
     return () => {
@@ -417,6 +467,9 @@ export default function Invoices() {
   const selectedResident = selectedResidentLeaseId
     ? residentLeases.find((lease) => lease.id === selectedResidentLeaseId)
     : null;
+
+  const generateMinMonth = toMonthInput(ownLease?.start_date);
+  const generateMaxMonth = toMonthInput(ownLease?.end_date);
 
   const visibleInvoices = useMemo(() => {
     const filtered = activeFilter === "all" ? invoices : invoices.filter((i) => i.payment_status === activeFilter);
@@ -530,6 +583,16 @@ export default function Invoices() {
       setActionError("No active lease found for your account.");
       return;
     }
+    // Same check the backend enforces (billing period must fall within the
+    // lease term) done client-side first, so an out-of-range pick gets an
+    // immediate, clear answer instead of a round trip.
+    if ((generateMinMonth && month < generateMinMonth) || (generateMaxMonth && month > generateMaxMonth)) {
+      setActionError(
+        `Your lease runs ${generateMinMonth} to ${generateMaxMonth} - pick a month within that range.`
+      );
+      return;
+    }
+
     const [year, monthNumber] = month.split("-").map(Number);
     const start = new Date(year, monthNumber - 1, 1);
     const iso = (d) => d.toISOString().slice(0, 10);
@@ -907,6 +970,8 @@ export default function Invoices() {
         open={isGenerateOpen}
         busy={generating}
         error={actionError}
+        minMonth={generateMinMonth}
+        maxMonth={generateMaxMonth}
         onConfirm={handleGenerateInvoice}
         onCancel={() => setIsGenerateOpen(false)}
       />

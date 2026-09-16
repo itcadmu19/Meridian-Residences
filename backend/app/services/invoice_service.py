@@ -223,6 +223,16 @@ def generate_invoice(
     if lease.status != "active":
         raise LeaseNotEligibleError("Only active leases are eligible for invoice generation")
 
+    # Billing period must fall within the lease term - a resident may only
+    # generate invoices for months their lease actually covers, not before
+    # move-in or after the agreement ends. Boundary months (lease starts or
+    # ends mid-month) are still allowed since rent is still owed for them.
+    if billing_period_end < lease.start_date or billing_period_start > lease.end_date:
+        raise LeaseNotEligibleError(
+            f"Billing period must fall within the lease term "
+            f"({lease.start_date.isoformat()} to {lease.end_date.isoformat()})"
+        )
+
     # One invoice per lease per calendar month - never generate a second
     # one for a month that already has one.
     existing = db.scalar(
