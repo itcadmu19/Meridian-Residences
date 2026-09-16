@@ -1,0 +1,15 @@
+# Ported from teammate feature-lavanya's branch (was backend/.dockerignore,
+# scoped to her `./backend`-only build context). Moved to the repo root and
+# extended since docker-compose.yml now builds with the whole repo as
+# context (needed so the backend image can also pick up alembic.ini and
+# database/ - see backend/Dockerfile).
+
+**/__pycache__
+**/*.pyc
+backend/.venv
+backend/.env
+backend/app/tests
+frontend/node_modules
+frontend/dist
+.git
+Documents
