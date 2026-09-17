@@ -31,14 +31,14 @@ def test_create_ticket_without_token_is_rejected(client):
     assert response.status_code == 401
 
 
-def test_triage_escalates_water_leak(client, auth_headers):
+def test_triage_escalates_water_leak(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "plumbing", "description": "There is a water leak under the kitchen sink"},
         headers=auth_headers,
     ).json()["data"]
 
-    triage = client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=auth_headers)
+    triage = client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=staff_auth_headers)
 
     assert triage.status_code == 200
     result = triage.json()["data"]
@@ -47,14 +47,14 @@ def test_triage_escalates_water_leak(client, auth_headers):
     assert result["vendor_queue"] == "plumbing-emergency"
 
 
-def test_triage_normal_request_assigns_type_priority_and_queue(client, auth_headers):
+def test_triage_normal_request_assigns_type_priority_and_queue(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "electrical", "description": "The living room outlet stopped working"},
         headers=auth_headers,
     ).json()["data"]
 
-    triage = client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=auth_headers)
+    triage = client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=staff_auth_headers)
 
     result = triage.json()["data"]
     assert result["issue_type"] == "electrical"
@@ -63,14 +63,14 @@ def test_triage_normal_request_assigns_type_priority_and_queue(client, auth_head
     assert result["vendor_queue"] == "electrical-standard"
 
 
-def test_track_ticket_status_after_triage(client, auth_headers):
+def test_track_ticket_status_after_triage(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "hvac", "description": "AC is not cooling properly"},
         headers=auth_headers,
     ).json()["data"]
 
-    client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=auth_headers)
+    client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=staff_auth_headers)
 
     tracked = client.get(f"/api/v1/maintenance-tickets/{created['id']}", headers=auth_headers)
 
@@ -101,40 +101,40 @@ def test_resident_cannot_update_own_ticket(client, auth_headers):
     assert updated.status_code == 403
 
 
-def test_marking_resolved_sets_resolved_at_automatically(client, auth_headers):
+def test_marking_resolved_sets_resolved_at_automatically(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "general", "description": "Loose cabinet handle"},
-        headers=auth_headers,
+        headers=staff_auth_headers,
     ).json()["data"]
     assert created["resolved_at"] is None
 
     resolved = client.patch(
         f"/api/v1/maintenance-tickets/{created['id']}",
         json={"status": "resolved"},
-        headers=auth_headers,
+        headers=staff_auth_headers,
     ).json()["data"]
     assert resolved["resolved_at"] is not None
 
     reopened = client.patch(
         f"/api/v1/maintenance-tickets/{created['id']}",
         json={"status": "open"},
-        headers=auth_headers,
+        headers=staff_auth_headers,
     ).json()["data"]
     assert reopened["resolved_at"] is None
 
 
-def test_cancel_ticket_via_status_update(client, auth_headers):
+def test_cancel_ticket_via_status_update(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "other", "description": "Resident changed their mind"},
-        headers=auth_headers,
+        headers=staff_auth_headers,
     ).json()["data"]
 
     cancelled = client.patch(
         f"/api/v1/maintenance-tickets/{created['id']}",
         json={"status": "cancelled"},
-        headers=auth_headers,
+        headers=staff_auth_headers,
     )
 
     assert cancelled.status_code == 200
@@ -154,14 +154,14 @@ def test_create_ticket_with_photo_attachment(client, auth_headers):
     assert response.json()["data"]["photo_data_url"] == photo
 
 
-def test_triage_reason_is_persisted_for_ticket_detail(client, auth_headers):
+def test_triage_reason_is_persisted_for_ticket_detail(client, auth_headers, staff_auth_headers):
     created = client.post(
         "/api/v1/maintenance-tickets",
         json={"issue_type": "plumbing", "description": "There is a water leak under the kitchen sink"},
         headers=auth_headers,
     ).json()["data"]
 
-    client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=auth_headers)
+    client.post(f"/api/v1/maintenance-tickets/{created['id']}/triage", headers=staff_auth_headers)
 
     detail = client.get(f"/api/v1/maintenance-tickets/{created['id']}", headers=auth_headers)
 

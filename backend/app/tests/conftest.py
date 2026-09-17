@@ -80,3 +80,36 @@ def auth_headers(client, resident_credential):
     response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture()
+def staff_credential(db_session):
+    guest = Guest(id=uuid.uuid4(), name="Test Staff", email=f"{uuid.uuid4()}@example.com")
+    property_ = Property(id=uuid.uuid4(), name="Staff Property", timezone="UTC")
+    db_session.add_all([guest, property_])
+    db_session.flush()
+
+    unit = Unit(id=uuid.uuid4(), property_id=property_.id, unit_number="999", status="occupied")
+    db_session.add(unit)
+    db_session.flush()
+
+    email = f"staff-{uuid.uuid4()}@example.com"
+    credential = ResidentCredential(
+        id=uuid.uuid4(),
+        guest_id=guest.id,
+        unit_id=unit.id,
+        email=email,
+        password_hash=hash_password(DEMO_PASSWORD),
+        role="staff",
+    )
+    db_session.add(credential)
+    db_session.commit()
+    return credential, email, DEMO_PASSWORD
+
+
+@pytest.fixture()
+def staff_auth_headers(client, staff_credential):
+    _, email, password = staff_credential
+    response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
